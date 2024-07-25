@@ -1,8 +1,8 @@
 import yaml
 import logging
 import imaplib
-import pandas as pd
-import json
+import email
+from email.header import decode_header
 
 
 def load_credentials(filepath):
@@ -22,32 +22,40 @@ def connect_to_gmail_imap(user, password):
     try:
         mail = imaplib.IMAP4_SSL(imap_url)
         mail.login(user, password)
-        mail.search('inbox')
-        return mail
+        mail.select('inbox')
+        status, messages = mail.search(None, 'ALL')
+        return mail, messages
+
     except Exception as e:
         logging.error(f"Connection failed {e}")
         raise
 
 
-def get_emails_to_print(mail, filepath):
-    with open(filepath, 'r') as file:
-        data = json.load(file)
-        emails_to_print = data['emails']
+def fetch_print(mail, messages):
+    email_ids = messages[0].split()[-10]
+    for (count, email_id) in enumerate(email_ids, 1):
+        status, msg_data = mail.fetch(email_id, "(RFC822)")
 
-    summary = pd.DataFrame(columns=['Emails', 'Count'])
-    for email in emails_to_print:
-        _, messages = mail.search(None, f'FROM "{email}"')
-        # mail.store(messages, '+FLAGS', '\\Deleted')
-        summary = summary.append(
-            {'Email': email, 'Count': len(messages)}, ignore_index=True)
-    return summary
+        if status == "OK":
+            msg = email.message_from_bytes(msg_data[0][1])
+
+            subject, encoding = decode_header(msg["Subject"])[0]
+            if isinstance(subject, bytes):
+                subject = subject.decode(encoding if encoding else "utf-8")
+
+            print(f"{count}. Subject:", subject)
+
+        else:
+            print(f"Failed to fetch email ID {email_id}")
 
 
 def main():
     credentials = load_credentials('credentials.yaml')
-    mail = connect_to_gmail_imap(*credentials)
-    summary = get_emails_to_print(mail, 'email_list.json')
-    print(summary)
+    print(*credentials)
+    mail, messages = connect_to_gmail_imap(*credentials)
+    fetch_print(mail, messages)
+    mail.close()
+    mail.logout()
 
 
 if __name__ == '__main__':
