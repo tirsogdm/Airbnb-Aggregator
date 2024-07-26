@@ -1,94 +1,71 @@
+import yaml
+import logging
 import imaplib
 import email
 from email.header import decode_header
 
 
-def fetch_and_print(all_email_ids, limit):
-    email_ids = all_email_ids[-limit]
-    for (count, email_id) in enumerate(email_ids, 1):
-        # Fetch the email by ID
+def load_credentials(filepath):
+    try:
+        with open(filepath, 'r') as file:
+            credentials = yaml.safe_load(file)
+            user = credentials['user']
+            password = credentials['password']
+            return user, password
+    except Exception as e:
+        logging.error(f"Failed to load credentials: {e}")
+        raise
+
+
+def connect_to_gmail_imap(user, password):
+    imap_url = 'imap.gmail.com'
+    try:
+        mail = imaplib.IMAP4_SSL(imap_url)
+        mail.login(user, password)
+        mail.select('inbox')
+        status, messages = mail.search(None, 'ALL')
+        return mail, messages
+
+    except Exception as e:
+        logging.error(f"Connection failed {e}")
+        raise
+
+
+def fetch_email_ids(mail, messages):
+    email_ids = messages[0].split()
+    return email_ids
+
+
+def fetch_print_subject(mail, email_ids):
+    for email_id in email_ids:
         status, msg_data = mail.fetch(email_id, "(RFC822)")
 
         if status == "OK":
-            # Get the email content
-            msg = email.message_from_bytes(msg_data[0][1])
+            raw_email = msg_data[0][1]
+            msg = email.message_from_bytes(raw_email)
 
-            # Decode the email subject
+            # Decode email subject
             subject, encoding = decode_header(msg["Subject"])[0]
             if isinstance(subject, bytes):
                 subject = subject.decode(encoding if encoding else "utf-8")
 
-            # Print the email subject
-            print(f"{count}. Subject:", subject)
+            # Extract date
+            date = msg["Date"]
 
+            print(f"Date: {date}, Subject:", subject)
         else:
             print(f"Failed to fetch email ID {email_id}")
 
 
-def connect_and_auth(imap_server, email_user, email_pass):
-    # Connect to server
-    mail = imaplib.IMAP4_SSL(imap_server)
-    print("Connected to server")
-
-    # Login
-    mail.login(email_user, email_pass)
-    print("Logged in as", email_user)
-
-    # Select mailbox
-    status, messages = mail.select("inbox")
-
-    if status != "OK":
-        print("Failed to select mailbox. Status:", status)
-        raise Exception("Failed to select mailbox")
-
-    print("Mailbox selected")
-
-    return mail
+def main():
+    credentials = load_credentials('credentials.yaml')
+    print(*credentials)
+    mail, messages = connect_to_gmail_imap(*credentials)
+    email_ids = fetch_email_ids(mail, messages)  # to be completed
+    fetch_print_subject(mail, email_ids)
+    mail.close()
+    mail.logout()
 
 
-# Gmail IMAP server address
-imap_server = "imap.gmail.com"
-email_user = "gestioncasalaffitte@gmail.com"
-email_pass = "ikofIscvbjzncsjy"
-
-try:
-    # Connect to server
-    mail = imaplib.IMAP4_SSL(imap_server)
-    print("Connected to server")
-
-    # Login
-    mail.login(email_user, email_pass)
-    print("Logged in as", email_user)
-
-    # Select mailbox
-    status, messages = mail.select("inbox")
-
-    if status != "OK":
-        print("Failed to select mailbox. Status:", status)
-        raise Exception("Failed to select mailbox")
-
-    print("Mailbox selected")
-
-    # Search all emails
-    status, messages = mail.search(None, "ALL")
-
-    if status == "OK":
-        print("Emails found")
-        # Convert to IDs
-        email_ids = messages[0].split()
-
-        # Call fetch and print
-        fetch_and_print(email_ids, 10)
-
-    else:
-        print("Failed to search emails.")
-
-except imaplib.IMAP4.error as e:
-    print(f"IMAP error: {e}")
-
-except Exception as e:
-    print(f"An error occurred: {e}")
-
-
-mail.close()
-mail.logout()
+if __name__ == '__main__':
+    main()
