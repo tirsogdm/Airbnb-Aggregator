@@ -3,6 +3,7 @@ import logging
 import imaplib
 import email
 from email.header import decode_header
+import re
 
 
 def load_credentials(filepath):
@@ -62,7 +63,7 @@ def get_email_content(msg):
     return None
 
 
-def fetch_print_subject(mail, messages, sender_address):
+def fetch_print_subject(mail, messages, sender_address, re_pattern):
     email_ids = messages[0].split()
     count = 0
 
@@ -85,6 +86,11 @@ def fetch_print_subject(mail, messages, sender_address):
             if sender_address.lower() in sender.lower():
                 count += 1
 
+                if re.match(re_pattern, subject.strip()):
+                    print(f"Matched: |{subject}|")
+                else:
+                    print(f"Did not match: |{subject}|")
+
                 body = get_email_content(msg)
 
                 print(f"Date: {date}, From: {sender}, Subject:", subject)
@@ -101,9 +107,12 @@ def fetch_print_subject(mail, messages, sender_address):
 def main():
     credentials = load_credentials('credentials.yaml')
     mail, messages = connect_to_gmail_imap(*credentials)
+    # re_pattern = r"^(CH7|V41): Hemos enviado un cobro de \d{1,3}(\.\d{3})*,\d{2} €$"
+    re_pattern = r"^(CH7|V41): Hemos enviado un cobro de \d{1,3}(?:\.\d{3})*,\d{2} €$"
+    r_pattern = r"^(CH7|V41): Hemos enviado un cobro de ((\d{1,3}(\.\d{3})*|\d{1,2}(\.\d{3})*)?,\d{2}|10\.000,00) €$"
 
     sender_address = "madridrentalsmadrid@gmail.com"
-    fetch_print_subject(mail, messages, sender_address)
+    fetch_print_subject(mail, messages, sender_address, r_pattern)
     mail.close()
     mail.logout()
 
