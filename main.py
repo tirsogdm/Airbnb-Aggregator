@@ -31,12 +31,41 @@ def connect_to_gmail_imap(user, password):
         raise
 
 
-def fetch_email_ids(mail, messages):
+def decode_subject(subject_header):
+    decoded_fragment = decode_header(subject_header)
+    subject = ''
+
+    for fragment, encoding in decoded_fragment:
+        if isinstance(fragment, bytes):
+            fragment = fragment.decode(encoding if encoding else "utf-8")
+        subject += fragment
+
+    return subject
+
+
+def get_email_content(msg):
+    if msg.is_multipart():
+        for part in msg.walk():
+            try:
+                body = part.get_payload(decode=True).decode()
+                return body
+            except:
+                pass
+
+    else:
+        try:
+            body = msg.get_payload(decode=True).decode()
+            return body
+        except:
+            pass
+
+    return None
+
+
+def fetch_print_subject(mail, messages, sender_address):
     email_ids = messages[0].split()
-    return email_ids
+    count = 0
 
-
-def fetch_print_subject(mail, email_ids):
     for email_id in email_ids:
         status, msg_data = mail.fetch(email_id, "(RFC822)")
 
@@ -45,24 +74,36 @@ def fetch_print_subject(mail, email_ids):
             msg = email.message_from_bytes(raw_email)
 
             # Decode email subject
-            subject, encoding = decode_header(msg["Subject"])[0]
-            if isinstance(subject, bytes):
-                subject = subject.decode(encoding if encoding else "utf-8")
+            subject = decode_subject(msg["Subject"])
 
             # Extract date
             date = msg["Date"]
 
-            print(f"Date: {date}, Subject:", subject)
+            # Email sender
+            sender = msg["From"]
+
+            if sender_address.lower() in sender.lower():
+                count += 1
+
+                body = get_email_content(msg)
+
+                print(f"Date: {date}, From: {sender}, Subject:", subject)
+                print("Content:")
+                print(body)
+                print("=" * 50)
+
         else:
             print(f"Failed to fetch email ID {email_id}")
+
+    print(f"{count} emails found.")
 
 
 def main():
     credentials = load_credentials('credentials.yaml')
-    print(*credentials)
     mail, messages = connect_to_gmail_imap(*credentials)
-    email_ids = fetch_email_ids(mail, messages)  # to be completed
-    fetch_print_subject(mail, email_ids)
+
+    sender_address = "madridrentalsmadrid@gmail.com"
+    fetch_print_subject(mail, messages, sender_address)
     mail.close()
     mail.logout()
 
