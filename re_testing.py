@@ -1,7 +1,7 @@
 import re
 
 # Regular expression to match numbers between 0,00 and 10.000,00
-pattern = r"^(CH7|V41): Hemos enviado un cobro de ((\d{1,3}(\.\d{3})*|\d{1,2}(\.\d{3})*)?,\d{2}|10\.000,00) €$"
+pattern = r"^(CH7|V41): Hemos enviado un cobro de \d{1,3}(\.\d{3})*,\d{2} €$"
 
 # Test subjects
 subjects = [
