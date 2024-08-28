@@ -59,12 +59,48 @@ email_content = """
 >
 """
 
+email_content = """
+Inicio del mensaje reenviado:
+De: Airbnb <express@airbnb.comAsunto: Hemos enviado un cobro de 1.080,42 €
+Fecha: 26 de agosto de 2024, 14:39:00 CEST
+Para: madridrentalsmadrid@gmail.com
+<https://www.airbnb.es/?eal_exp=1727267940&eal_sig=5317aef3cadfbbf32e022f63e8cea6341b5e35cc21b4bad442eb95e6c168b04e&eal_uid=368117770&eluid=0&euid=8cbe51b9-82c2-13e7-f1b4-dc88f488ab86> Pago de 1.080,42 € enviado
+Te hemos enviado un cobro de 1.080,42 €. Este pago debería llegar a tu cuenta antes del 2 de septiembre de 2024, contando con los fines de semana y los días festivos. 
+Número de identificación de la cuenta de Airbnb
+368117770 
+*Número de identificación del pago
+G-QMMVU63IIHI6OB3BJX5PQWATCYJGRPJY
+Tipo 
+Detalles
+Importe
+Reservation
+08/25/2024 - 08/30/2024
+HMWT8DF5NP - Johannes Buchhhold - Exclusivo Penthouse junto a la Gran Vía de Madrid
+Número de identificación del anuncio: 50608777 
+1.080,42 € 
+Importe pagado (EUR) 
+1.080,42 €
+*Número de identificación del pago 
+Este es el identificador único que Airbnb transmite a tu entidad financiera. Ten en cuenta que esta información quizá no aparezca en tu extracto bancario. 
+Puedes consultar el estado de tus cobros en tu Historial de transacciones <https://www.airbnb.es/users/transaction_history/368117770?c=.pi80.pkcGF5bWVudHMvaG9zdF9wYXlvdXRfc2VudF9iYXNl&euid=8cbe51b9-82c2-13e7-f1b4-dc88f488ab86>. 
+Gracias,
+El equipo de Airbnb 
+Preguntas frecuentes 
+¿Cuándo recibiré el pago?
+<https://www.airbnb.es/help/question/425?c=.pi80.pkcGF5bWVudHMvaG9zdF9wYXlvdXRfc2VudF9iYXNl&euid=8cbe51b9-82c2-13e7-f1b4-dc88f488ab86¿Cómo puedo calcular el pago que recibiré?
+<https://www.airbnb.es/help/question/459?c=.pi80.pkcGF5bWVudHMvaG9zdF9wYXlvdXRfc2VudF9iYXNl&euid=8cbe51b9-82c2-13e7-f1b4-dc88f488ab86Puedes obtener más información en nuestro Centro de ayuda <https://www.airbnb.es/help?c=.pi80.pkcGF5bWVudHMvaG9zdF9wYXlvdXRfc2VudF9iYXNl&euid=8cbe51b9-82c2-13e7-f1b4-dc88f488ab86>. 
+Airbnb Ireland UC, 8 Hanover Quay,
+Dublín 2, Irlanda 
+>
+"""
+
 
 def extract_payments(emails):
     payments = list()
 
     for email in emails:
-        payment = parse_html(email["forwarded-content"])
+        forwarded_content = email["forwarded-content"]
+        payment = parse_html(forwarded_content, True)
         payment.setDateTime(email["date"])
         payments.append(payment)
 
@@ -73,11 +109,12 @@ def extract_payments(emails):
 
 def parse_html(email, verbose=False):
     # Step 1: Clean up the text to remove leading '> ' characters
-    stripped_content = re.sub(r'>\s+', '', email)
+    stripped_content = re.sub(r'\n>\s+', '', email)
 
     # Step 2: Extract Reservation Information
     reservation_pattern = re.compile(
-        r"Reservation\s*(\d{2}/\d{2}/\d{4}) - (\d{2}/\d{2}/\d{4})\s*-*\s*(.*?)\s*-\s*(.*?)\s*-\s*(.*?)\s*Número de identificación del anuncio:\s*(\d+)\s*(\d+,\d{2}) €",
+        r"Reservation\s*(\d{2}/\d{2}/\d{4}) - (\d{2}/\d{2}/\d{4})\s*-*\s*(.*?)\s*-\s*(.*?)\s*-\s*(.*?)\s*Número de identificación del anuncio:\s*(\d+)\s*(\d{1,3}(\.\d{3})*,\d{2}) €",
+
         re.DOTALL
     )
 

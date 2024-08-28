@@ -1,22 +1,41 @@
 import sys
 import json
-from PyQt5.QtWidgets import QApplication, QMainWindow, QSplitter, QDialog
+from PyQt5.QtWidgets import QApplication, QMainWindow, QSplitter, QLabel
 from PyQt5.QtCore import Qt
-import pandas as pd
-from openpyxl import Workbook
 
 from PaymentView import PaymentView
 from Payments import Payments
-from Reservations import Reservations
 from ExtractPayments import extract_payments
-from EmailFetchThread import fetch_emails
+from FetchDialog import FetchDialog
+from EmailFetchThread import EmailFetchThread
 
 
 class MainWindow(QMainWindow):
-    def __init__(self, data):
+    def __init__(self):
         super().__init__()
-        self.setWindowTitle("Ingresos - Madrid Rentals")
 
+        self.setWindowTitle("Ingresos - Madrid Rentals")
+        self.setGeometry(500, 500, 600, 400)
+
+        self.show_fetch_dialog()
+
+    def show_fetch_dialog(self):
+        self.dialog = FetchDialog()
+
+        self.thread = EmailFetchThread()
+        self.thread.finished.connect(self.on_data_fetched)
+        self.thread.start()
+
+        self.dialog.exec()
+
+    def on_data_fetched(self):
+        email_data = self.load_email_data()
+        payments = extract_payments(email_data)
+
+        self.dialog.accept()
+        self.launch_main_window(payments)
+
+    def launch_main_window(self, data):
         # Payments List Widget
         self.payments = Payments(data)
         # Payment View Widget
@@ -42,22 +61,26 @@ class MainWindow(QMainWindow):
                 proxy_index)
             self.payments_view.signals.update.emit(source_index.row())
 
-
-def load_email_data(filename="email_data.json"):
-    with open(filename, 'r', encoding='utf-8') as file:
-        email_data_list = json.load(file)
-    print(f"Email data loaded from {filename}")
-    return email_data_list
+    def load_email_data(self, filename="email_data.json"):
+        with open(filename, 'r', encoding='utf-8') as file:
+            email_data_list = json.load(file)
+        print(f"Email data loaded from {filename}")
+        return email_data_list
 
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
+    window = MainWindow()
+    window.show()
+    sys.exit(app.exec_())
 
+    """
     # Get data
     email_data = load_email_data()
     payments = extract_payments(email_data)
 
     window = MainWindow(payments)
     window.show()
-    # Start event loop
+
     app.exec_()
+    """
