@@ -6,6 +6,8 @@ from PaymentView import PaymentView
 from Payments import Payments
 from Reservations import Reservations
 from ExtractPayments import extract_payments
+import pandas as pd
+from openpyxl import Workbook
 
 
 class MainWindow(QMainWindow):

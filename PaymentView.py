@@ -1,5 +1,5 @@
-from PyQt5.QtWidgets import QWidget, QVBoxLayout, QLabel, QTextEdit
-from PyQt5.QtCore import Qt, QObject, pyqtSignal
+from PyQt5.QtWidgets import QWidget, QVBoxLayout, QTextEdit
+from PyQt5.QtCore import QObject, pyqtSignal
 from Reservations import Reservations
 
 

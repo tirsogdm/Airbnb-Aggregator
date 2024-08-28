@@ -65,7 +65,7 @@ def extract_payments(emails):
 
     for email in emails:
         payment = parse_html(email["forwarded-content"])
-        payment.setDate(email["date"])
+        payment.setDateTime(email["date"])
         payments.append(payment)
 
     return payments

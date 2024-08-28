@@ -9,6 +9,7 @@ class Payment():
                              for reservation in reservations]
         self.building = self.reservations[0].building
         self.raw = raw
+        self.date_time = None
         self.date = None
         self.published = False
 
@@ -17,11 +18,12 @@ class Payment():
         number_str = number_str.replace(',', '.')
         return float(number_str)
 
-    def setDate(self, string_date):
+    def setDateTime(self, string_date):
         date_format = 'ddd, dd MMM yyyy HH:mm:ss'
         stripped_date = re.sub(r' \+\d{4}$', '', string_date)
         padded_date = re.sub(r'(\b\d\b) ', r'0\1 ', stripped_date)
-        self.date = QDateTime.fromString(padded_date, date_format)
+        self.date_time = QDateTime.fromString(padded_date, date_format)
+        self.date = self.date_time.date()
 
     def setRaw(self, raw):
         self.raw = raw
@@ -59,5 +61,12 @@ class Reservation():
 
             if code.startswith("V"):
                 code = code[1:]
+            elif code == "Madrid":
+                code = "Ático"
 
             self.apartment = code
+
+
+class Date():
+    def __init__(self):
+        self.value = ""
