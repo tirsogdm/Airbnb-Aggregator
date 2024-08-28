@@ -132,8 +132,8 @@ def main():
     sender_address = "madridrentalsmadrid@gmail.com"
 
     emails = fetch_emails(mail, messages, sender_address, pattern)
-    # print(f"Fetched {len(emails)} emails:\n{emails}")
-    store_email_data(emails)
+    print(f"Fetched {len(emails)} emails:\n{emails}")
+    # store_email_data(emails)
     mail.close()
     mail.logout()
 

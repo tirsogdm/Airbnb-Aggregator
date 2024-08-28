@@ -10,18 +10,18 @@ class Inbox(QWidget):
 
         # Widgets
         inbox_label = InboxLabel()
-        inbox_list = InboxList(data)
+        self.inbox_list = InboxList(data)
 
         # Add to Layout
         layout.addWidget(inbox_label)
-        layout.addWidget(inbox_list)
+        layout.addWidget(self.inbox_list)
 
         self.setLayout(layout)
 
 
 class InboxLabel(QLabel):
     def __init__(self):
-        super().__init__("Inbox")
+        super().__init__("Payments")
 
         self.setContentsMargins(10, 10, 0, 0)
         font = self.font()
@@ -36,8 +36,6 @@ class InboxList(QListWidget):
         self.data = data
         self.populate_inbox()
 
-        self.currentItemChanged.connect(self.handle_index_change)
-
     def populate_inbox(self):
         for email in self.data:
             item_widget = ItemWidget(email)
@@ -45,11 +43,6 @@ class InboxList(QListWidget):
 
             list_item.setSizeHint(item_widget.sizeHint())
             self.setItemWidget(list_item, item_widget)
-
-    def handle_index_change(self, current):
-        if current is not None:
-            current_row = self.row(current)
-            print(f"Current item index: {current_row}")
 
 
 class ItemWidget(QWidget):
