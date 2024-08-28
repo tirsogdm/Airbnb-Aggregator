@@ -22,9 +22,10 @@ class MainWindow(QMainWindow):
         splitter = QSplitter(Qt.Horizontal)
         splitter.addWidget(self.payments)
         splitter.addWidget(self.payments_view)
-        splitter.setSizes([1000, 500])
+        splitter.setSizes([1000, 700])
 
-        self.payments.selectionModel().selectionChanged.connect(self.selection_changed)
+        self.payments.payments_table.selectionModel(
+        ).selectionChanged.connect(self.selection_changed)
 
         self.setCentralWidget(splitter)
 

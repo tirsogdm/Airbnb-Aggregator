@@ -1,9 +1,10 @@
 import re
+from PyQt5.QtCore import QDateTime
 
 
 class Payment():
     def __init__(self, amount, reservations, raw):
-        self.amount = amount
+        self.amount = self.formatAmount(amount)
         self.reservations = [Reservation(reservation)
                              for reservation in reservations]
         self.building = self.reservations[0].building
@@ -11,8 +12,16 @@ class Payment():
         self.date = None
         self.published = False
 
-    def setDate(self, date):
-        self.date = re.sub(r' \+\d{4}$', '', date)
+    def formatAmount(self, number_str):
+        number_str = number_str.replace('.', '')
+        number_str = number_str.replace(',', '.')
+        return float(number_str)
+
+    def setDate(self, string_date):
+        date_format = 'ddd, dd MMM yyyy HH:mm:ss'
+        stripped_date = re.sub(r' \+\d{4}$', '', string_date)
+        padded_date = re.sub(r'(\b\d\b) ', r'0\1 ', stripped_date)
+        self.date = QDateTime.fromString(padded_date, date_format)
 
     def setRaw(self, raw):
         self.raw = raw
