@@ -31,6 +31,7 @@ class Payments(QWidget):
         min_date, max_date = self.get_min_max_dates(year, month)
         self.payments_table.proxy_filter_model.set_date_range(
             min_date, max_date)
+        self.payments_table.clearSelection()
 
     def get_min_max_dates(self, year, month):
         min_date = QDate(year, month, 1)

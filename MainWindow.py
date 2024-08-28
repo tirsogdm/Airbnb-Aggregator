@@ -50,7 +50,13 @@ class MainWindow(QMainWindow):
         self.payments.payments_table.selectionModel(
         ).selectionChanged.connect(self.selection_changed)
 
+        self.payments.controller.signals.update.connect(
+            self.handle_date_change)
+
         self.setCentralWidget(splitter)
+
+    def handle_date_change(self, x, y):
+        self.payments_view.reservations.model.update(None)
 
     def selection_changed(self, selected):
         indexes = selected.indexes()
