@@ -33,8 +33,10 @@ class MainWindow(QMainWindow):
         indexes = selected.indexes()
 
         if indexes:
-            selected_row = indexes[0].row()
-            self.payments_view.signals.update.emit(selected_row)
+            proxy_index = indexes[0]
+            source_index = self.payments.payments_table.proxy_filter_model.mapToSource(
+                proxy_index)
+            self.payments_view.signals.update.emit(source_index.row())
 
 
 def load_email_data(filename="email_data.json"):
