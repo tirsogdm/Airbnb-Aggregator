@@ -25,8 +25,9 @@ class Payments(QWidget):
         self.controller.signals.update.connect(self.handle_date_selection)
         self.controller.export_btn.clicked.connect(self.export_to_excel)
 
+        self.controller.trigger_initial_signals()
+
     def handle_date_selection(self, year, month):
-        print("date:", year, month)
         min_date, max_date = self.get_min_max_dates(year, month)
         self.payments_table.proxy_filter_model.set_date_range(
             min_date, max_date)
@@ -58,11 +59,11 @@ class Payments(QWidget):
 
     def export_to_excel(self):
         visible_rows = self.get_visible_rows()
-        date = self.controller.get_filtered_date()
+        date = self.controller.get_date()
 
         wb = Workbook()
         ws = wb.active
-        ws.title = f"Pagos Madrid Rentals {date[1]}.{date[0]}"
+        ws.title = f"Pagos Madrid Rentals {date.month()}.{date.year()}"
 
         header_fill = PatternFill(
             start_color="FFFF00", end_color="FFFF00", fill_type="solid")
@@ -97,7 +98,7 @@ class Payments(QWidget):
             adjusted_width = max_length + 2
             ws.column_dimensions[column[0].column_letter].width = adjusted_width
 
-        wb.save(f"pagos_madrid_rentals_{date[1]}.{date[0]}.xlsx")
+        wb.save(f"pagos_madrid_rentals_{date.month()}.{date.year()}.xlsx")
 
 
 class PaymentsTable(QTableView):

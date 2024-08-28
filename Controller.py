@@ -1,5 +1,5 @@
 from PyQt5.QtWidgets import QWidget, QLineEdit, QPushButton, QComboBox, QHBoxLayout
-from PyQt5.QtCore import Qt, QObject, QAbstractListModel, pyqtSignal
+from PyQt5.QtCore import Qt, QObject, QAbstractListModel, pyqtSignal, QDate
 
 
 class ControllerSignals(QObject):
@@ -10,7 +10,7 @@ class Controller(QWidget):
     def __init__(self):
         super().__init__()
         self.signals = ControllerSignals()
-        self.filtered_date = [2024, 8]
+        self.date = QDate.currentDate()
 
         self.build_layout()
 
@@ -21,8 +21,8 @@ class Controller(QWidget):
         # Widgets
         self.search_filter = QLineEdit()
         self.search_filter.setPlaceholderText("Search...")
-        self.month_selector = MonthSelector(self.filtered_date)
-        self.year_selector = YearSelector(self.filtered_date)
+        self.month_selector = MonthSelector(self.date)
+        self.year_selector = YearSelector(self.date)
         self.export_btn = QPushButton("Generate CSV")
 
         # Add widgets
@@ -34,23 +34,22 @@ class Controller(QWidget):
         self.setLayout(layout)
 
         # Connect signals
-        self.month_selector.currentIndexChanged.connect(self.month_selected)
         self.year_selector.currentIndexChanged.connect(self.year_selected)
+        self.month_selector.currentIndexChanged.connect(self.month_selected)
 
     def year_selected(self, index):
-        self.filtered_date[0] = int(self.year_selector.model.data(
-            self.year_selector.model.index(index), Qt.DisplayRole))
-
-        print(self.filtered_date)
-        self.signals.update.emit(self.filtered_date[0], self.filtered_date[1])
+        self.date = QDate(index + 2020, self.date.month(), 1)
+        self.signals.update.emit(self.date.year(), self.date.month())
 
     def month_selected(self, index):
-        self.filtered_date[1] = index + 1
-        print(self.filtered_date)
-        self.signals.update.emit(self.filtered_date[0], self.filtered_date[1])
+        self.date = QDate(self.date.year(), index + 1, 1)
+        self.signals.update.emit(self.date.year(), self.date.month())
 
-    def get_filtered_date(self):
-        return self.filtered_date
+    def get_date(self):
+        return self.date
+
+    def trigger_initial_signals(self):
+        self.signals.update.emit(self.date.year(), self.date.month())
 
 
 class MonthSelector(QComboBox):
@@ -63,6 +62,8 @@ class MonthSelector(QComboBox):
         self.model = CustomListModel(data)
         self.setModel(self.model)
 
+        self.setCurrentIndex(date.month()-1)
+
 
 class YearSelector(QComboBox):
     def __init__(self, date):
@@ -71,6 +72,8 @@ class YearSelector(QComboBox):
 
         self.model = CustomListModel(data)
         self.setModel(self.model)
+
+        self.setCurrentIndex(date.year()-2020)
 
 
 class CustomListModel(QAbstractListModel):
