@@ -2,6 +2,7 @@ import sys
 import json
 from PyQt5.QtWidgets import QApplication, QMainWindow, QSplitter, QLabel
 from PyQt5.QtCore import Qt
+from PyQt5.QtGui import QIcon
 
 from PaymentView import PaymentView
 from Payments import Payments
@@ -14,7 +15,7 @@ class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
 
-        self.setWindowTitle("Ingresos - Madrid Rentals")
+        self.setWindowTitle("Madrid Rentals - Ingresos")
         self.setGeometry(500, 500, 600, 400)
 
         self.show_fetch_dialog()
@@ -76,17 +77,9 @@ class MainWindow(QMainWindow):
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
+    app.setApplicationName("Madrid Rentals - Ingresos")
+    app.setWindowIcon(QIcon('LOGO_Madrid-Rentals.png'))
+
     window = MainWindow()
     window.show()
     sys.exit(app.exec_())
-
-    """
-    # Get data
-    email_data = load_email_data()
-    payments = extract_payments(email_data)
-
-    window = MainWindow(payments)
-    window.show()
-
-    app.exec_()
-    """
