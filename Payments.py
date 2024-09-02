@@ -63,8 +63,12 @@ class Payments(QWidget):
         date = self.controller.get_date()
 
         wb = Workbook()
-        ws = wb.active
-        ws.title = f"Pagos Madrid Rentals {date.month()}.{date.year()}"
+
+        # Create sheets
+        ws_ch7 = wb.active
+        ws_ch7.title = "CH7"
+
+        ws_v41 = wb.create_sheet("V41")
 
         header_fill = PatternFill(
             start_color="FFFF00", end_color="FFFF00", fill_type="solid")
@@ -72,7 +76,8 @@ class Payments(QWidget):
         headers = ["", "Platform", "Date", "Amount Transfered", "Building",
                    "Date in", "Date out", "ID", "Guest", "Apartment", "Amount"]
 
-        ws.append(headers)
+        ws_ch7.append(headers)
+        ws_v41.append(headers)
 
         for row in visible_rows:
             payment = self._data[row]
@@ -80,26 +85,34 @@ class Payments(QWidget):
                 row = ["", "Airbnb", "", "", "", reservation.date_in, reservation.date_out, reservation.id,
                        reservation.guest_name, reservation.apartment, reservation.amount]
 
+                if reservation.building == "CH7":
+                    target_sheet = ws_ch7
+                elif reservation.building == "V41":
+                    target_sheet = ws_v41
+                else:
+                    continue
+
                 if i == 0:
                     row[2] = payment.date.toString("dd/MM/yyyy")
                     row[3] = payment.amount
                     row[4] = payment.building
 
-                    ws.append(row)
-                    for cell in ws[ws.max_row]:
+                    target_sheet.append(row)
+                    for cell in target_sheet[target_sheet.max_row]:
                         cell.fill = header_fill
 
                 else:
-                    ws.append(row)
+                    target_sheet.append(row)
 
         # Size columns
-        for column in ws.columns:
-            max_length = max(
-                len(str(cell.value)) if cell.value is not None else 0 for cell in column)
-            adjusted_width = max_length + 2
-            ws.column_dimensions[column[0].column_letter].width = adjusted_width
+        for ws in [ws_ch7, ws_v41]:
+            for column in ws.columns:
+                max_length = max(
+                    len(str(cell.value)) if cell.value is not None else 0 for cell in column)
+                adjusted_width = max_length + 2
+                ws.column_dimensions[column[0].column_letter].width = adjusted_width
 
-        wb.save(f"pagos_madrid_rentals_{date.month()}.{date.year()}.xlsx")
+        wb.save(f"Pagos Madrid Rentals - {date.month()}.{date.year()}.xlsx")
 
 
 class PaymentsTable(QTableView):
