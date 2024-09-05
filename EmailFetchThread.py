@@ -15,7 +15,7 @@ class EmailFetchThread(QThread):
         credentials = self.load_credentials('credentials.yaml')
         mail, messages = self.connect_to_gmail_imap(*credentials)
         sender_address = "madridrentalsmadrid@gmail.com"
-        pattern = r"^(CH7|V41): Hemos enviado un cobro de \d{1,3}(\.\d{3})*,\d{2}"
+        pattern = r"^(CH7|V41):? Hemos enviado un cobro de \d{1,3}(\.\d{3})*,\d{2}"
 
         emails = self.fetch_emails(mail, messages, sender_address, pattern)
         self.store_email_data(emails)

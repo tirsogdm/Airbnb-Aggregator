@@ -1,5 +1,7 @@
 from PyQt5.QtWidgets import QTableView, QHeaderView
-from PyQt5.QtCore import Qt, QAbstractTableModel
+from PyQt5.QtCore import Qt, QAbstractTableModel, QSortFilterProxyModel, QDate, QDateTime
+
+from Representations import Amount
 
 
 class Reservations(QTableView):
@@ -10,10 +12,16 @@ class Reservations(QTableView):
         self.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
         self.setSelectionMode(QTableView.SingleSelection)
         self.setSelectionBehavior(QTableView.SelectRows)
+        self.setSortingEnabled(True)
         self.verticalHeader().setVisible(True)
 
         self.model = ReservationsModel(data, None)
-        self.setModel(self.model)
+
+        self.proxy_sort_model = ReservationsSortProxyModel()
+        self.proxy_sort_model.setSourceModel(self.model)
+        self.proxy_sort_model.setFilterKeyColumn(-1)
+
+        self.setModel(self.proxy_sort_model)  # Test !!!
 
     def update(self, current_row):
         self.model.update(current_row)
@@ -26,10 +34,26 @@ class ReservationsModel(QAbstractTableModel):
         self.current_idx = current_idx
 
     def data(self, index, role):
-        if role == Qt.DisplayRole:
-            value = self._data[self.current_idx].reservations[index.row()]
-            idx_col = index.column()
+        value = self._data[self.current_idx].reservations[index.row()]
+        idx_col = index.column()
 
+        if role == Qt.DisplayRole:
+            if idx_col == 0:
+                return value.id
+            elif idx_col == 1:
+                return value.date_in.toString()
+            elif idx_col == 2:
+                return value.date_out.toString()
+            elif idx_col == 3:
+                return value.guest_name
+            elif idx_col == 4:
+                return value.apartment
+            elif idx_col == 5:
+                return value.listing_id
+            elif idx_col == 6:
+                return value.amount.toString()
+
+        if role == Qt.EditRole or role == Qt.UserRole:
             if idx_col == 0:
                 return value.id
             elif idx_col == 1:
@@ -43,7 +67,7 @@ class ReservationsModel(QAbstractTableModel):
             elif idx_col == 5:
                 return value.listing_id
             elif idx_col == 6:
-                return f'{value.amount} €'
+                return value.amount
 
         if role == Qt.TextAlignmentRole:
             return Qt.AlignCenter
@@ -68,3 +92,20 @@ class ReservationsModel(QAbstractTableModel):
     def update(self, current_idx):
         self.current_idx = current_idx
         self.layoutChanged.emit()
+
+
+class ReservationsSortProxyModel(QSortFilterProxyModel):
+    def __init__(self):
+        super(ReservationsSortProxyModel, self).__init__()
+
+    def lessThan(self, left, right):
+        left_data = self.sourceModel().data(left, Qt.EditRole)
+        right_data = self.sourceModel().data(right, Qt.EditRole)
+
+        if isinstance(left_data, QDate) and isinstance(right_data, QDate):
+            return left_data < right_data
+
+        if isinstance(left_data, Amount) and isinstance(right_data, Amount):
+            return left_data < right_data
+
+        return super(ReservationsSortProxyModel, self).lessThan(left, right)

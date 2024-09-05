@@ -122,14 +122,17 @@ def extract_payments(emails):
     payments = list()
 
     for email in emails:
-        payment = parse_html(email["forwarded-content"])
-        payment.setDateTime(email["date"])
+        raw_content = email["forwarded-content"]
+        date = email["date"]
+        payment_amount, payment_reservations = parse_email(raw_content)
+        payment = Payment(payment_amount, payment_reservations,
+                          date, raw_content)
         payments.append(payment)
 
     return payments
 
 
-def parse_html(email, verbose=False):
+def parse_email(email, verbose=False):
     # Step 1: Clean up the text to remove leading '> ' characters
     stripped_content = re.sub(r'\n>\s*', '\n', email)
 
@@ -154,8 +157,8 @@ def parse_html(email, verbose=False):
 
     verbose and print(reservations)
 
-    return Payment(final_amount, reservations, email)
+    return final_amount, reservations
 
 
 if __name__ == "__main__":
-    print(parse_html(email_content2, True))
+    print(parse_email(email_content2, True))

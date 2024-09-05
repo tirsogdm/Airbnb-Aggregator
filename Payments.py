@@ -1,8 +1,12 @@
-from PyQt5.QtWidgets import QTableView, QHeaderView, QWidget, QVBoxLayout
+from PyQt5.QtWidgets import QTableView, QHeaderView, QWidget, QVBoxLayout, QFileDialog, QMessageBox
 from PyQt5.QtCore import Qt, QAbstractTableModel, QSortFilterProxyModel, QDateTime, QDate, QTime
 from Controller import Controller
 from openpyxl import Workbook
 from openpyxl.styles import PatternFill
+from openpyxl.styles import NamedStyle
+import os
+
+from Representations import Amount
 
 
 class Payments(QWidget):
@@ -23,7 +27,7 @@ class Payments(QWidget):
         self.controller.search_filter.textChanged.connect(
             self.payments_table.proxy_filter_model.setFilterFixedString)
         self.controller.signals.update.connect(self.handle_date_selection)
-        self.controller.export_btn.clicked.connect(self.export_to_excel)
+        self.controller.export_btn.clicked.connect(self.generate_csv)
 
         self.controller.trigger_initial_signals()
 
@@ -58,23 +62,43 @@ class Payments(QWidget):
         visible_rows.sort()  # set to ascending order by default
         return visible_rows
 
-    def export_to_excel(self):
-        visible_rows = self.get_visible_rows()
+    def generate_csv(self):
         date = self.controller.get_date()
+        file_name = f"Pagos Madrid Rentals - {date.month()}.{date.year()}.xlsx"
+
+        options = QFileDialog.Options()
+        options |= QFileDialog.DontUseNativeDialog
+        directory = QFileDialog.getExistingDirectory(
+            self, "Select Directory", options=options)
+
+        if directory:
+            file_path = os.path.join(directory, file_name)
+            self.create_workbook(file_path)
+
+            QMessageBox.information(
+                self, "Success", f"Excel file created successfully at:\n{file_path}")
+
+    def create_workbook(self, path):
+        visible_rows = self.get_visible_rows()
 
         wb = Workbook()
 
-        # Create sheets
+        # Create worksheets
         ws_ch7 = wb.active
         ws_ch7.title = "CH7"
 
         ws_v41 = wb.create_sheet("V41")
 
+        # Currency format for Euro
+        euro_format = NamedStyle(name="euro_format")
+        euro_format.number_format = '#,##0.00 €'
+
+        # Add headers
         header_fill = PatternFill(
             start_color="FFFF00", end_color="FFFF00", fill_type="solid")
 
-        headers = ["", "Platform", "Date", "Amount Transfered", "Building",
-                   "Date in", "Date out", "ID", "Guest", "Apartment", "Amount"]
+        headers = ["", "Platform", "Date", "Amount Transfered",
+                   "Amount", "Guest", "Apartment", "Reference"]
 
         ws_ch7.append(headers)
         ws_v41.append(headers)
@@ -82,27 +106,32 @@ class Payments(QWidget):
         for row in visible_rows:
             payment = self._data[row]
             for i, reservation in enumerate(payment.reservations):
-                row = ["", "Airbnb", "", "", "", reservation.date_in, reservation.date_out, reservation.id,
-                       reservation.guest_name, reservation.apartment, reservation.amount]
+                row = ["", "Airbnb", "", "", reservation.amount,
+                       reservation.guest_name, reservation.apartment, reservation.id]
 
                 if reservation.building == "CH7":
                     target_sheet = ws_ch7
                 elif reservation.building == "V41":
                     target_sheet = ws_v41
                 else:
+                    # Error checking - Think of how to expose this to user.
+                    print("NOT IN ANY BUILDING!!")
                     continue
 
                 if i == 0:
                     row[2] = payment.date.toString("dd/MM/yyyy")
                     row[3] = payment.amount
-                    row[4] = payment.building
 
                     target_sheet.append(row)
                     for cell in target_sheet[target_sheet.max_row]:
                         cell.fill = header_fill
 
+                    target_sheet[target_sheet.max_row][3].style = euro_format
+
                 else:
                     target_sheet.append(row)
+
+                target_sheet[target_sheet.max_row][4].style = euro_format
 
         # Size columns
         for ws in [ws_ch7, ws_v41]:
@@ -112,7 +141,7 @@ class Payments(QWidget):
                 adjusted_width = max_length + 2
                 ws.column_dimensions[column[0].column_letter].width = adjusted_width
 
-        wb.save(f"Pagos Madrid Rentals - {date.month()}.{date.year()}.xlsx")
+        wb.save(path)
 
 
 class PaymentsTable(QTableView):
@@ -128,7 +157,7 @@ class PaymentsTable(QTableView):
 
         self.model = PaymentsModel(data)
 
-        self.proxy_filter_model = PaymentsFilterProxyModel()
+        self.proxy_filter_model = PaymentsSortFilterProxyModel()
         self.proxy_filter_model.setSourceModel(self.model)
         self.proxy_filter_model.setFilterKeyColumn(-1)
 
@@ -154,23 +183,23 @@ class PaymentsModel(QAbstractTableModel):
 
         if role == Qt.DisplayRole:
             if idx_col == 0:
-                return value.date.toString("dd/MM/yyyy")
+                return value.datetime.toString()
             elif idx_col == 1:
-                return value.amount
+                return value.amount.toString()
             elif idx_col == 2:
                 return value.building
             elif idx_col == 3:
-                return len(value.reservations)
+                return value.num_reservations
 
         if role == Qt.EditRole or role == Qt.UserRole:
             if idx_col == 0:
-                return value.date_time
+                return value.datetime
             elif idx_col == 1:
                 return value.amount
             elif idx_col == 2:
                 return value.building
             elif idx_col == 3:
-                return len(value.reservations)
+                return value.num_reservations
 
         if role == Qt.TextAlignmentRole:
             return Qt.AlignCenter
@@ -191,30 +220,11 @@ class PaymentsModel(QAbstractTableModel):
         return super().headerData(section, orientation, role)
 
 
-class PaymentsFilterProxyModel(QSortFilterProxyModel):
+class PaymentsSortFilterProxyModel(QSortFilterProxyModel):
     def __init__(self):
-        super(PaymentsFilterProxyModel, self).__init__()
-        self.building_filter = None
-        self.min_amount = None
-        self.max_amount = None
-        self.min_reservations = None
-        self.max_reservations = None
+        super(PaymentsSortFilterProxyModel, self).__init__()
         self.min_date = None
         self.max_date = None
-
-    def set_building_filter(self, building):
-        self.building_filter = building
-        self.invalidateFilter()
-
-    def set_amount_range(self, min_amount, max_amount):
-        self.min_amount = min_amount
-        self.max_amount = max_amount
-        self.invalidateFilter()
-
-    def set_reservations_range(self, min_reservations, max_reservations):
-        self.min_reservations = min_reservations
-        self.max_reservations = max_reservations
-        self.invalidateFilter()
 
     def set_date_range(self, min_date, max_date):
         self.min_date = min_date
@@ -228,37 +238,13 @@ class PaymentsFilterProxyModel(QSortFilterProxyModel):
         if isinstance(left_data, QDateTime) and isinstance(right_data, QDateTime):
             return left_data < right_data
 
-        return super(PaymentsFilterProxyModel, self).lessThan(left, right)
+        if isinstance(left_data, Amount) and isinstance(right_data, Amount):
+            return left_data < right_data
+
+        return super(PaymentsSortFilterProxyModel, self).lessThan(left, right)
 
     def filterAcceptsRow(self, source_row, source_parent):
         model = self.sourceModel()
-
-        # Filter by building
-        if self.building_filter:
-            # Assuming the building is in column 2
-            building_index = model.index(source_row, 2)
-            building_value = model.data(building_index, Qt.EditRole)
-            if self.building_filter not in building_value:
-                return False
-
-        # Filter by amount range
-        if self.min_amount is not None or self.max_amount is not None:
-            # Assuming the amount is in column 1
-            amount_index = model.index(source_row, 1)
-            amount_value = int(model.data(amount_index, Qt.EditRole)[:-2])
-            if (self.min_amount is not None and amount_value < self.min_amount) or \
-               (self.max_amount is not None and amount_value > self.max_amount):
-                return False
-
-        # Filter by reservations range
-        if self.min_reservations is not None or self.max_reservations is not None:
-            # Assuming reservations are in column 3
-            reservations_index = model.index(source_row, 3)
-            reservations_value = int(model.data(
-                reservations_index, Qt.EditRole))
-            if (self.min_reservations is not None and reservations_value < self.min_reservations) or \
-               (self.max_reservations is not None and reservations_value > self.max_reservations):
-                return False
 
         if self.min_date is not None or self.max_date is not None:
             date_index = model.index(source_row, 0)
@@ -268,4 +254,4 @@ class PaymentsFilterProxyModel(QSortFilterProxyModel):
                     (self.max_date is not None and date_value > self.max_date):
                 return False
 
-        return super(PaymentsFilterProxyModel, self).filterAcceptsRow(source_row, source_parent)
+        return super(PaymentsSortFilterProxyModel, self).filterAcceptsRow(source_row, source_parent)
