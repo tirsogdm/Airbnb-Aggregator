@@ -3,7 +3,7 @@ from PyQt5.QtCore import Qt, QAbstractTableModel, QSortFilterProxyModel, QDateTi
 from Controller import Controller
 from openpyxl import Workbook
 from openpyxl.styles import PatternFill
-from openpyxl.styles import NamedStyle
+from openpyxl.styles import Font, NamedStyle
 import os
 
 from Representations import Amount
@@ -104,35 +104,39 @@ class Payments(QWidget):
         ws_ch7.append(headers)
         ws_v41.append(headers)
 
+        # Format headers to bold
+        bold_font = Font(bold=True)
+        for ws in [ws_ch7, ws_v41]:
+            for cell in ws[1]:
+                cell.font = bold_font
+
+        # Write payments as rows
         for row in visible_rows:
             payment = self._data[row]
             for i, reservation in enumerate(payment.reservations):
-                row = ["", "Airbnb", "", "", reservation.amount,
+                row = ['', 'Airbnb', '', '', reservation.amount,
                        reservation.guest_name, reservation.apartment, reservation.id]
 
                 if reservation.building == "CH7":
                     target_sheet = ws_ch7
                 elif reservation.building == "V41":
                     target_sheet = ws_v41
-                else:
-                    # Error checking - Think of how to expose this to user.
+                else:  # Error checking - Think of how to expose this to user.
                     print("NOT IN ANY BUILDING!!")
                     continue
 
                 if i == 0:
-                    row[2] = payment.date.toString("dd/MM/yyyy")
+                    row[2] = payment.datetime.toString()
                     row[3] = payment.amount
 
-                    target_sheet.append(row)
-                    for cell in target_sheet[target_sheet.max_row]:
-                        cell.fill = header_fill
+                target_sheet.append(row)
+                target_sheet[target_sheet.max_row][4].style = euro_format
 
+                if i == 0:
                     target_sheet[target_sheet.max_row][3].style = euro_format
 
-                else:
-                    target_sheet.append(row)
-
-                target_sheet[target_sheet.max_row][4].style = euro_format
+                    for cell in target_sheet[target_sheet.max_row]:
+                        cell.fill = header_fill
 
         # Size columns
         for ws in [ws_ch7, ws_v41]:

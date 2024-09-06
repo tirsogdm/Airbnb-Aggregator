@@ -1,4 +1,3 @@
 *.yaml
 *.json
 __pycache__/
-*.pyc

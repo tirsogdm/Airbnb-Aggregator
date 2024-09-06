@@ -12,16 +12,22 @@ class Reservations(QTableView):
         self.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
         self.setSelectionMode(QTableView.SingleSelection)
         self.setSelectionBehavior(QTableView.SelectRows)
-        self.setSortingEnabled(True)
+        self.setSortingEnabled(False)
         self.verticalHeader().setVisible(True)
 
         self.model = ReservationsModel(data, None)
 
+        # The current implementation of this proxy model results in segmentation fault errors.
+        # Another perhaps related error that arises in this context is something like "Wrong index sent to mapFromSource".
+        """
         self.proxy_sort_model = ReservationsSortProxyModel()
         self.proxy_sort_model.setSourceModel(self.model)
         self.proxy_sort_model.setFilterKeyColumn(-1)
-
+        
         self.setModel(self.proxy_sort_model)  # Test !!!
+        """
+
+        self.setModel(self.model)
 
     def update(self, current_row):
         self.model.update(current_row)

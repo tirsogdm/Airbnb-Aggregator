@@ -24,6 +24,17 @@ class Controller(QWidget):
         self.month_selector = MonthSelector(self.date)
         self.year_selector = YearSelector(self.date)
         self.export_btn = QPushButton("Generate CSV")
+        self.export_btn.setStyleSheet("""
+            QPushButton {
+                background-color: #666666;
+                color: white;
+                padding: 3px 18px 5px 18px;
+                border-radius: 5px;
+            }
+            QPushButton:hover {
+                background-color: #333333;
+            }
+        """)
 
         # Add widgets
         layout.addWidget(self.search_filter)
