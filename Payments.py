@@ -78,6 +78,7 @@ class Payments(QWidget):
             QMessageBox.information(
                 self, "Success", f"Excel file created successfully at:\n{file_path}")
 
+    # ADJUST FOR CHANGES TO REPRESENTATION CLASSES !!!!
     def create_workbook(self, path):
         visible_rows = self.get_visible_rows()
 
