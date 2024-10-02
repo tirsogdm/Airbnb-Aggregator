@@ -15,9 +15,10 @@ class EmailFetchThread(QThread):
         credentials = self.load_credentials('credentials.yaml')
         mail, messages = self.connect_to_gmail_imap(*credentials)
         sender_address = "madridrentalsmadrid@gmail.com"
-        pattern = r"^(CH7|V41):? Hemos enviado un cobro de \d{1,3}(\.\d{3})*,\d{2}"
+        patterns = [r"^(CH7|V41):? Hemos enviado un cobro de \d{1,3}(\.\d{3})*,\d{2}",
+                    r"^(CH7|V41):? A \d{1,3}(\.\d{3})*,\d{2} € payout was sent"]
 
-        emails = self.fetch_emails(mail, messages, sender_address, pattern)
+        emails = self.fetch_emails(mail, messages, sender_address, patterns)
         self.store_email_data(emails)
 
         mail.close()
@@ -96,7 +97,7 @@ class EmailFetchThread(QThread):
 
         return subject
 
-    def fetch_emails(self, mail, messages, sender_address, pattern):
+    def fetch_emails(self, mail, messages, sender_address, patterns):
         email_ids = messages[0].split()
         emails = list()
 
@@ -111,23 +112,24 @@ class EmailFetchThread(QThread):
                 subject = self.decode_subject(msg["Subject"])
                 sender = msg["From"]
 
-                if sender_address.lower() in sender.lower() and re.match(pattern, subject):
-                    body = self.get_email_content(msg)
-                    main_body, forwarded_content = self.split_body_and_forward(
-                        body)
+                if sender_address.lower() in sender.lower():
+                    if re.match(patterns[0], subject) or re.match(patterns[1], subject):
+                        body = self.get_email_content(msg)
+                        main_body, forwarded_content = self.split_body_and_forward(
+                            body)
 
-                    email_data = {
-                        "date": msg["Date"],
-                        "subject": subject,
-                        "from": sender,
-                        "to": msg["To"],
-                        "cc": msg["Cc"],
-                        "bcc": msg["Bcc"],
-                        "main-body": main_body,
-                        "forwarded-content": forwarded_content,
-                        "content-type": msg.get_content_type(),
-                    }
-                    emails.append(email_data)
+                        email_data = {
+                            "date": msg["Date"],
+                            "subject": subject,
+                            "from": sender,
+                            "to": msg["To"],
+                            "cc": msg["Cc"],
+                            "bcc": msg["Bcc"],
+                            "main-body": main_body,
+                            "forwarded-content": forwarded_content,
+                            "content-type": msg.get_content_type(),
+                        }
+                        emails.append(email_data)
 
             else:
                 print(f"Failed to fetch email ID {email_id}")
