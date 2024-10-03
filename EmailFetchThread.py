@@ -1,22 +1,28 @@
 from PyQt5.QtCore import QThread, pyqtSignal
-import yaml
+from dotenv import load_dotenv
+import os
 import logging
 import imaplib
 import email
-from email.header import decode_header
 import re
 import json
+
+from email.header import decode_header
 
 
 class EmailFetchThread(QThread):
     finished = pyqtSignal()
 
     def run(self):
-        credentials = self.load_credentials('credentials.yaml')
-        mail, messages = self.connect_to_gmail_imap(*credentials)
-        sender_address = "madridrentalsmadrid@gmail.com"
+        load_dotenv()
+        username = os.getenv("USERNAME")
+        password = os.getenv("PASSWORD")
+        sender_address = os.getenv("EMAIL_SENDER")
+
         patterns = [r"^(CH7|V41):? Hemos enviado un cobro de \d{1,3}(\.\d{3})*,\d{2}",
                     r"^(CH7|V41):? A \d{1,3}(\.\d{3})*,\d{2} € payout was sent"]
+        
+        mail, messages = self.connect_to_gmail_imap(username, password)
 
         emails = self.fetch_emails(mail, messages, sender_address, patterns)
         self.store_email_data(emails)
@@ -26,7 +32,7 @@ class EmailFetchThread(QThread):
 
         self.finished.emit()
 
-    def load_credentials(self, filepath):
+    def load_credentials(self):
         try:
             with open(filepath, 'r') as file:
                 credentials = yaml.safe_load(file)
