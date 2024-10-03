@@ -8,14 +8,25 @@ from PyQt5.QtCore import QDateTime
 # --------------------------
 class Payment():
     def __init__(self, amount, reservations, date_string, raw):
-        self.amount = Amount(amount)
-        self.reservations = [Reservation(reservation)
-                             for reservation in reservations]
-        self.num_reservations = len(self.reservations)
-        self.building = self.reservations[0].building
+        self.num_reservations = len(reservations)
+        self.reservations = list()
+        self.building = 'undef'
         self.raw = raw
         self.datetime = CDateTime(
             date_string, DateTimeFormat.datetime, self.preprocess_date_string)
+
+        if self.num_reservations > 0:
+            self.reservations = [Reservation(reservation) for reservation in reservations]
+            self.building = self.reservations[0].building
+        else:
+            print(self.datetime.toString())
+
+        if amount:
+            self.amount = Amount(amount)
+        else:
+            self.amount = Amount(0.0)
+            print(self.datetime.toString())
+
 
         """
         self.date_time = self.format_str_datetime(

@@ -138,6 +138,7 @@ def parse_email(email, verbose=False):
 
     # r"Reservation\s*(\d{2}/\d{2}/\d{4}) - (\d{2}/\d{2}/\d{4})\s*-*\s*(.*?)\s*-\s*(.*?)\s*-\s*(.*?)\s*Número de identificación del anuncio:\s*(\d+)\s*([\d,.]+,\d{2}) €",
     # Step 2: Extract Reservation Information
+    # !!! In english messages all that changes is "Número de identificación del anuncio" to "Listing ID"
     reservation_pattern = re.compile(
         r"Reservation\s*(\d{2}/\d{2}/\d{4}) - (\d{2}/\d{2}/\d{4})\s*-*\s*(.*?)\s*-\s*(.*?)\s*-\s*(.*?)\s*Número de identificación del anuncio:\s*(\d+)\s*(\d{1,3}(\.\d{3})*,\d{2}) €",
         re.DOTALL
@@ -145,7 +146,8 @@ def parse_email(email, verbose=False):
 
     reservations = reservation_pattern.findall(stripped_content)
 
-    # Step 3: Extract Final Amount (Importe pagado)
+    # Step 3: Extract Final Amount (Importe pagado) 
+    # !!! In english messages this is simply "Amount paid"
     final_amount_pattern = re.compile(
         r"Importe pagado \(EUR\)\s*(\d{1,3}(\.\d{3})*,\d{2}) €")
     final_amount_match = final_amount_pattern.search(stripped_content)

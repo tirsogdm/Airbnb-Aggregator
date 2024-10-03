@@ -1,3 +1,5 @@
 {
-    "python.pythonPath": "~/.pyenv/versions/my_gui/bin/python"
+  "prettier.configPath": "~/.prettierrc",
+  "python.defaultInterpreterPath": "~/.pyenv/versions/my_gui/bin/python",
+  "editor.formatOnSave": true
 }
