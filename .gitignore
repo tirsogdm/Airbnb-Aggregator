@@ -1,3 +1,6 @@
 *.yaml
 *.json
 __pycache__/
+.python-version
+my_gui_env/
+.DS_Store
