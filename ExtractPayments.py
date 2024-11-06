@@ -59,6 +59,8 @@ email_content = """
 >
 """
 
+
+
 email_content2 = """
 > Inicio del mensaje reenviado:
 > 
@@ -124,29 +126,32 @@ def extract_payments(emails):
     for email in emails:
         raw_content = email["forwarded-content"]
         date = email["date"]
-        payment_amount, payment_reservations = parse_email(raw_content)
+        subject = email["subject"]
+        building = get_building_str(subject)
+        print(date, '|', building)
+        payment_amount, payment_reservations = parse_email(raw_content, date)
         payment = Payment(payment_amount, payment_reservations,
-                          date, raw_content)
+                          date, building, raw_content)
         payments.append(payment)
 
     return payments
 
-
-def parse_email(email, verbose=False):
+def parse_email(email, date, verbose=False):
     # Step 1: Clean up the text to remove leading '> ' characters
     stripped_content = re.sub(r'\n>\s*', '\n', email)
 
     # r"Reservation\s*(\d{2}/\d{2}/\d{4}) - (\d{2}/\d{2}/\d{4})\s*-*\s*(.*?)\s*-\s*(.*?)\s*-\s*(.*?)\s*Número de identificación del anuncio:\s*(\d+)\s*([\d,.]+,\d{2}) €",
     # Step 2: Extract Reservation Information
     # !!! In english messages all that changes is "Número de identificación del anuncio" to "Listing ID"
+    # Break down the pattern into smaller parts so it can be easily fixed.
     reservation_pattern = re.compile(
-        r"Reservation\s*(\d{2}/\d{2}/\d{4}) - (\d{2}/\d{2}/\d{4})\s*-*\s*(.*?)\s*-\s*(.*?)\s*-\s*(.*?)\s*Número de identificación del anuncio:\s*(\d+)\s*(\d{1,3}(\.\d{3})*,\d{2}) €",
+        r"Reservation\s*(\d{2}/\d{2}/\d{4}) - (\d{2}/\d{2}/\d{4})\s*-*\s*(.*?)\s*-\s*(.*?)\s*-\s*(.*?)\s*Número de identificación del anuncio:\s*([\d\w\s]+)\s*(\d{1,3}(?:\.\d{3})*,\d{2}) €",
         re.DOTALL
     )
 
     reservations = reservation_pattern.findall(stripped_content)
 
-    # Step 3: Extract Final Amount (Importe pagado) 
+    # Step 3: Extract Final Amount (Importe pagado)
     # !!! In english messages this is simply "Amount paid"
     final_amount_pattern = re.compile(
         r"Importe pagado \(EUR\)\s*(\d{1,3}(\.\d{3})*,\d{2}) €")
@@ -161,6 +166,10 @@ def parse_email(email, verbose=False):
 
     return final_amount, reservations
 
+def get_building_str(subject):
+    bldg_pattern = re.compile(r"([A-Za-z]+\d+):\s+.*")
+    bldg_match = re.search(bldg_pattern, subject)
+    return bldg_match.group(1)
 
 if __name__ == "__main__":
     print(parse_email(email_content2, True))

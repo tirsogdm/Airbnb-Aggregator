@@ -7,26 +7,22 @@ from PyQt5.QtCore import QDateTime
 # --------- Payment --------
 # --------------------------
 class Payment():
-    def __init__(self, amount, reservations, date_string, raw):
+    def __init__(self, amount, reservations, date_string, building, raw):
         self.num_reservations = len(reservations)
         self.reservations = list()
-        self.building = 'undef'
+        self.building = building
         self.raw = raw
         self.datetime = CDateTime(
             date_string, DateTimeFormat.datetime, self.preprocess_date_string)
 
         if self.num_reservations > 0:
-            self.reservations = [Reservation(reservation) for reservation in reservations]
+            self.reservations = [Reservation(reservation, building) for reservation in reservations]
             self.building = self.reservations[0].building
-        else:
-            print(self.datetime.toString())
 
         if amount:
             self.amount = Amount(amount)
         else:
             self.amount = Amount(0.0)
-            print(self.datetime.toString())
-
 
         """
         self.date_time = self.format_str_datetime(
@@ -47,7 +43,7 @@ class Payment():
 # ------- Reservation ------
 # --------------------------
 class Reservation():
-    def __init__(self, reservation):
+    def __init__(self, reservation, building):
         self.date_in = CDateTime(reservation[0], DateTimeFormat.us_date)
         self.date_out = CDateTime(reservation[1], DateTimeFormat.us_date)
 
@@ -56,10 +52,10 @@ class Reservation():
         self.apartment_desc = reservation[4]
         self.listing_id = reservation[5]
         self.amount = Amount(reservation[6])
-        self.building = None
+        self.building = building
         self.apartment = None
 
-        self.extract_building_apartment()
+        self.extract_building_apartment() # Review method, no longer need to extract building just apartment!
 
     def extract_building_apartment(self):
         if "a 3 calles de Gran Vía" in self.apartment_desc:

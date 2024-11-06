@@ -79,7 +79,7 @@ class EmailFetchThread(QThread):
 
     def split_body_and_forward(self, body):
         lines = body.splitlines()
-        main_body, forwarded_content = list(), list()
+        main_body, forwarded_content = [], []
         forwarding = False
 
         for line in lines:

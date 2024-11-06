@@ -1,4 +1,6 @@
+import os
 import sys
+import time
 import json
 from PyQt5.QtWidgets import QApplication, QMainWindow, QSplitter, QLabel
 from PyQt5.QtCore import Qt
@@ -17,10 +19,25 @@ class MainWindow(QMainWindow):
 
         self.setWindowTitle("Madrid Rentals - Ingresos")
         self.setGeometry(500, 500, 600, 400)
+        
+        data_path = "email_data.json"
+        self.fetching = self.check_fetch_recency(data_path)
 
-        self.show_fetch_dialog()
+        if not self.fetching:
+            self.on_data_fetched()
+        else:
+            self.fetch_emails()
+        
+    def check_fetch_recency(self, file_path):
+        if os.path.exists(file_path):
+            creation_time = os.path.getctime(file_path)
+            if time.time() - creation_time < 15 * 60:
+                print("Last email fetch: less than 15 minutes ago. Loading data...")
+                return False
+        print("No recent email fetch. Fetching data...")
+        return True
 
-    def show_fetch_dialog(self):
+    def fetch_emails(self):
         self.dialog = FetchDialog()
 
         self.thread = EmailFetchThread()
@@ -33,7 +50,9 @@ class MainWindow(QMainWindow):
         email_data = self.load_email_data()
         payments = extract_payments(email_data)
 
-        self.dialog.accept()
+        if self.fetching:
+            self.dialog.accept()
+    
         self.launch_main_window(payments)
 
     def launch_main_window(self, data):
