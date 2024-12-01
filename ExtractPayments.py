@@ -59,8 +59,6 @@ email_content = """
 >
 """
 
-
-
 email_content2 = """
 > Inicio del mensaje reenviado:
 > 
@@ -136,23 +134,26 @@ def extract_payments(emails):
     return payments
 
 def parse_email(email, date, verbose=False):
-    # Step 1: Clean up the text to remove leading '> ' characters
+    # Step 1: Clean up the text to remove leading '> ' characters NOTE REVIEW THIS!!!
     stripped_content = re.sub(r'\n>\s*', '\n', email)
+    stripped_content = re.sub('>', ' ', stripped_content)
 
     # r"Reservation\s*(\d{2}/\d{2}/\d{4}) - (\d{2}/\d{2}/\d{4})\s*-*\s*(.*?)\s*-\s*(.*?)\s*-\s*(.*?)\s*Número de identificación del anuncio:\s*(\d+)\s*([\d,.]+,\d{2}) €",
     # Step 2: Extract Reservation Information
     # !!! In english messages all that changes is "Número de identificación del anuncio" to "Listing ID"
     # Break down the pattern into smaller parts so it can be easily fixed.
     reservation_pattern = re.compile(
-        r"Reservation\s*(\d{2}/\d{2}/\d{4}) - (\d{2}/\d{2}/\d{4})\s*-*\s*(.*?)\s*-\s*(.*?)\s*-\s*(.*?)\s*Número de identificación del anuncio:\s*([\d\w\s]+)\n\s*(\d{1,3}(?:\.\d{3})*,\d{2}) €",
+        r"Reservation\s*(\d{2}/\d{2}/\d{4}) - (\d{2}/\d{2}/\d{4})\s*-*\s*(.*?)\s*-\s*(.*?)\s*-\s*(.*?)\s*Número de identificación del anuncio:\s*([\d\w\s]+)(?:\s*\(.*?\))?\n\s*(\d{1,3}(?:\.\d{3})*,\d{2}) €",
         re.DOTALL
     )
 
     reservations = reservation_pattern.findall(stripped_content)
 
-    if '25' in date:
-        print(reservations)
-
+    if not reservations:
+        print(date)
+        print(stripped_content)
+        print("-"*50)
+    
     # Step 3: Extract Final Amount (Importe pagado)
     # !!! In english messages this is simply "Amount paid"
     final_amount_pattern = re.compile(
@@ -169,7 +170,7 @@ def parse_email(email, date, verbose=False):
     return final_amount, reservations
 
 def get_building_str(subject):
-    bldg_pattern = re.compile(r"([A-Za-z]+\d+):\s+.*")
+    bldg_pattern = re.compile(r"([A-Za-z]+\d+):?\s+.*") # Some subjects don't have a colon!
     bldg_match = re.search(bldg_pattern, subject)
     return bldg_match.group(1)
 
