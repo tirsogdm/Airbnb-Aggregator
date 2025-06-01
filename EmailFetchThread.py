@@ -32,19 +32,6 @@ class EmailFetchThread(QThread):
 
         self.finished.emit()
 
-    def load_credentials(self):
-        try:
-            with open(filepath, 'r') as file:
-                credentials = yaml.safe_load(file)
-                user = credentials['user']
-                password = credentials['password']
-                return user, password
-
-        except Exception as e:
-            logging.error(f"Failed to load credentials: {e}")
-            raise
-
-    # use of "status"
 
     def connect_to_gmail_imap(self, user, password):
         imap_url = 'imap.gmail.com'
