@@ -1,6 +1,6 @@
 from PyQt5.QtWidgets import QTableView, QHeaderView, QWidget, QVBoxLayout, QFileDialog, QMessageBox
 from PyQt5.QtCore import Qt, QAbstractTableModel, QSortFilterProxyModel, QDateTime, QDate, QTime
-from Controller import Controller
+from GUI.Controller import Controller
 from openpyxl import Workbook
 from openpyxl.styles import PatternFill
 from openpyxl.styles import Font, NamedStyle

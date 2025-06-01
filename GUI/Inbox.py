@@ -1,6 +1,5 @@
 from PyQt5.QtWidgets import QListWidget, QWidget, QHBoxLayout, QVBoxLayout, QLabel, QListWidgetItem
 
-
 class Inbox(QWidget):
     def __init__(self, data):
         super().__init__()

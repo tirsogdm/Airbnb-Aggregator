@@ -1,17 +1,15 @@
 import os
-import sys
 import time
 import json
-from PyQt5.QtWidgets import QApplication, QMainWindow, QSplitter, QLabel
+from PyQt5.QtWidgets import QMainWindow, QSplitter
 from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QIcon
 
-from PaymentView import PaymentView
-from Payments import Payments
+
+from .PaymentView import PaymentView
+from .Payments import Payments
+from .FetchDialog import FetchDialog
 from ExtractPayments import extract_payments
-from FetchDialog import FetchDialog
 from EmailFetchThread import EmailFetchThread
-
 
 class MainWindow(QMainWindow):
     def __init__(self):
@@ -92,13 +90,3 @@ class MainWindow(QMainWindow):
             email_data_list = json.load(file)
         print(f"Email data loaded from {filename}")
         return email_data_list
-
-
-if __name__ == "__main__":
-    app = QApplication(sys.argv)
-    app.setApplicationName("Madrid Rentals - Ingresos")
-    app.setWindowIcon(QIcon('LOGO_Madrid-Rentals.png'))
-
-    window = MainWindow()
-    window.show()
-    sys.exit(app.exec_())

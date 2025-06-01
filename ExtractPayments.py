@@ -143,7 +143,7 @@ def parse_email(email, date, verbose=False):
     # !!! In english messages all that changes is "Número de identificación del anuncio" to "Listing ID"
     # Break down the pattern into smaller parts so it can be easily fixed.
     reservation_pattern = re.compile(
-        r"Reservation\s*(\d{2}/\d{2}/\d{4}) - (\d{2}/\d{2}/\d{4})\s*-*\s*(.*?)\s*-\s*(.*?)\s*-\s*(.*?)\s*Número de identificación del anuncio:\s*([\d\w\s]+)(?:\s*\(.*?\))?\n\s*(\d{1,3}(?:\.\d{3})*,\d{2}) €",
+        r"(?:Reservation|Home)\s*(\d{2}/\d{2}/\d{4}) - (\d{2}/\d{2}/\d{4})\s*-*\s*(.*?)\s*-\s*(.*?)\s*-\s*(.*?)\s*Número de identificación del anuncio:\s*([\d\w\s]+)(?:\s*\(.*?\))?\n\s*(\d{1,3}(?:\.\d{3})*,\d{2}) €",
         re.DOTALL
     )
 

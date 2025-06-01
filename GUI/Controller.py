@@ -1,10 +1,8 @@
 from PyQt5.QtWidgets import QWidget, QLineEdit, QPushButton, QComboBox, QHBoxLayout
 from PyQt5.QtCore import Qt, QObject, QAbstractListModel, pyqtSignal, QDate
 
-
 class ControllerSignals(QObject):
     update = pyqtSignal(int, int)
-
 
 class Controller(QWidget):
     def __init__(self):
