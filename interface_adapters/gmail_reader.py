@@ -7,6 +7,11 @@ from interfaces.email_reader import EmailReader
 
 from email.header import decode_header
 
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s — %(levelname)s — %(message)s"
+)
+
 class GmailReader(EmailReader):
     """
     Reads emails from Gmail.
@@ -32,10 +37,15 @@ class GmailReader(EmailReader):
             raise
 
     def decode_subject(self, subject_header):
-        decoded, encoding = decode_header(subject_header)[0]
-        if isinstance(decoded, bytes):
-            return decoded.decode(encoding or "utf-8", errors="ignore")
-        return decoded
+        decoded_fragments = decode_header(subject_header)
+        subject = ''
+
+        for fragment, encoding in decoded_fragments:
+            if isinstance(fragment, bytes):
+                fragment = fragment.decode(encoding if encoding else "utf-8", errors="ignore")
+            subject += fragment
+
+        return subject
 
     def get_email_content(self, msg):
         if msg.is_multipart():
@@ -107,9 +117,26 @@ class GmailReader(EmailReader):
             }
             emails.append(email_data)
 
+        logging.info(f"Fetched {len(emails)} relevant emails.")
         mail.close()
         mail.logout()
         return emails
 
+
 if __name__ == "__main__":
-    reader = GmailReader()
+    import os
+    from dotenv import load_dotenv
+
+    logging.info("Starting GmailReader...")
+    load_dotenv()
+
+    reader = GmailReader(
+        username = os.getenv("USERNAME"),
+        password = os.getenv("PASSWORD"),
+        sender_address = os.getenv("SENDER_ADDRESS"),
+        subject_patterns = [r"^(CH7|V41):? Hemos enviado un cobro de \d{1,3}(\.\d{3})*,\d{2}", r"^(CH7|V41):? A \d{1,3}(\.\d{3})*,\d{2} € payout was sent"]
+    )
+
+    emails = reader.fetch_emails()
+    for i, e in enumerate(emails):
+        logging.info(f"\n--- Email #{i+1} ---\n{e['subject']}\n{e['main-body'][:100]}")
